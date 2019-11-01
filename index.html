@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <title>Contentful UI-Extension BigCommerce Products</title>
+        <link rel="stylesheet" href="https://contentful.github.io/ui-extensions-sdk/cf-extension.css">
+        <link rel="dns-prefetch preconnect" href="https://cdn11.bigcommerce.com" crossorigin>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            button.f36-button {
+                height: 2.5rem;
+                display: inline-block;
+                padding: 0 1rem;
+                color: #536171;
+                line-height: 2;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                border: .0625rem solid #c3cfd5;
+                border-radius: .125rem;
+                font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol;
+                font-size: .875rem;
+                overflow: hidden;
+                -webkit-transition: background-color .2s ease-in-out,opacity .2s ease-in-out,border-color .2s ease-in-out;
+                transition: background .2s ease-in-out,opacity .2s ease-in-out,border-color .2s ease-in-out;
+                vertical-align: middle;
+                text-decoration: none;
+                cursor: pointer;
+                outline: none;
+            }
+
+            button.f36-button.color-default {
+                background: #e5ebed;
+            }
+
+            button.f36-button.color-default:hover {
+                background: #d3dce0;
+            }
+
+            button.f36-button.color-positive,
+            button.f36-button.color-negative {
+                color: #f7f9fa;
+            }
+
+            button.f36-button.color-positive {
+                border-color: #0baa75;
+                background-image: -webkit-gradient(linear,left bottom,left top,from(#0eb87f),to(#14d997));
+                background-image: linear-gradient(0deg,#0eb87f,#14d997);
+                background-size: 100% 200%;
+            }
+
+            button.f36-button.color-positive:hover {
+                background-position: 0 100%;
+            }
+
+            button.f36-button.color-negative {
+                border-color: #cd3f39;
+                background-image: -webkit-gradient(linear,left bottom,left top,from(#d9453f),to(#f05751));
+                background-image: linear-gradient(0deg,#d9453f,#f05751);
+                background-size: 100% 200%;
+            }
+
+            button.f36-button.color-negative:hover {
+                background-position: 0 100%;
+            }
+
+            .card.glow-positive {
+                box-shadow: 0px 0px 7px #0eb87f;
+            }
+
+            .card {
+                height: 370px;
+                display: block;
+                padding: .875rem;
+                border: 1px solid #d3dce0;
+                border-radius: 2px;
+                color: #2a3039;
+                text-decoration: none;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0,0,0,.08);
+                -webkit-transition: border-color .2s ease-in-out;
+                transition: border-color .2s ease-in-out;
+                width: calc((100% - 1rem) / 3);
+                float: left;
+                margin-right: 0.5rem;
+                margin-bottom: 0.5rem;
+                overflow: hidden;
+            }
+
+            .card:nth-child(3n+3) {
+                margin-right: 0;
+            }
+
+            .card-header {
+                color: #8091a5;
+                background-color: #f7f9fa;
+                padding: .625rem 1.25rem;
+            }
+
+            .card-body {
+                height: calc(100% - 60px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .card-body > div {
+                max-width:; 100%;
+            }
+
+            .card-body > div > img {
+                max-width: 100%;
+            }
+
+            .card-title {
+                font-weight: 700;
+                color: #2a3039;
+                line-height: 1.5;
+                font-size: .75rem;
+                letter-spacing: .1rem;
+                text-transform: uppercase;
+                text-rendering: optimizeLegibility;
+            }
+
+            .d-none {
+                display: none !important;
+            }
+
+            .text-center {
+                text-align: center;
+            }
+
+            .text-uppercase {
+                text-transform: uppercase;
+            }
+
+            .alert-danger {
+                background-color: #d9453f;
+                padding: .875rem;
+                color: #f7f9fa;
+            }
+
+            #pagination {
+                width: 100%;
+                margin-top: 40px;
+                float: left;
+            }
+        </style>
+        <script src="https://unpkg.com/contentful-ui-extensions-sdk@3"></script>
+    </head>
+    <body id="bigcommerce_extension">
+   		<div>
+              	<!-- Loading message or spinner -->
+                <div id="error_message" class="alert alert-danger d-none" role="alert"></div>
+
+                <!-- Main product listing element, to be filled out with product data from the API -->
+                <div id="product_listing" class="card-columns">
+
+                </div>
+
+                <!-- Pagination -->
+                <div id="pagination" class="text-center">
+                    <button id="pagination_button" type="button" class="f36-button color-default"></button>
+                </div>
+        </div>
+        <script>
+            window.contentfulExtension.init( extension => {
+                // Size iframe
+                extension.window.startAutoResizer();
+
+                // Set initial value
+                const fieldValue = extension.field.getValue();
+                let productsObj = {selected_products: []};
+
+                /*
+                    Utility functions for rendering
+                */
+                // Based on the browser locale, provide a localized price
+                function formatLocalizedPrice (price) {
+                    return new Intl.NumberFormat(navigator.language, {style: 'currency', currency: price.currencyCode}).format(price.value);
+                }
+
+                // Create a srcset string for responsive images
+                function renderSrcset(image) {
+                    return `${image.img320px} 320w, ${image.img640px} 640w, ${image.img960px} 960w, ${image.img1280px} 1280w`
+                }
+
+                // Function to strip HTML from product descriptions, leaving just the text
+                function stripHtml(html){
+                   var doc = new DOMParser().parseFromString(html, 'text/html');
+                   return doc.body.textContent || "";
+                }
+
+                /*
+                    Page rendering logic
+                */
+                function renderPage(data) {
+                    // Set page info
+                    params.pageInfo = data.site.products.pageInfo;
+                    renderPagination(data.site.products.pageInfo);
+                    // Render the HTML for the product listing by looping over each product in the response
+                    document.getElementById('product_listing').innerHTML = `${data.site.products.edges.map(node => renderProduct(node.product)).reduce((productsHtml, productHtml) => productsHtml += productHtml)}`;
+
+                    // Assign event listeners
+                    const actionButtons = document.querySelectorAll('.card-header > button.f36-button');
+                    for (let i = 0; i < actionButtons.length; i++) {
+                        actionButtons[i].addEventListener('click', toggleProduct);
+                    }
+                }
+
+                function renderProduct(product) {
+                    // Render the product into a bootstrap "card"
+                    return `
+                    <div class="card text-center" data-product-id="${product.entityId}">
+                        <div class="card-header">
+                            <button type="button" class="f36-button color-positive ${productsObj.selected_products.indexOf(String(product.entityId)) == -1 ? '' : 'd-none'}">Add</button>
+                            <button type="button" class="f36-button color-negative ${productsObj.selected_products.indexOf(String(product.entityId)) == -1 ? 'd-none' : ''}">Remove</button>
+                        </div>
+                        <div class="card-body">
+                            <div>
+                                ${product.defaultImage ? `<img loading="lazy" class="card-img-top" style="min-height: 25%; object-fit: contain;" src="${product.defaultImage.img960px}" srcset="${renderSrcset(product.defaultImage)}" alt="${product.defaultImage.altText}">` : ''}
+                                <h5 class="card-title text-uppercase">${product.name}</h5>
+                            </div>
+                        </div>
+                    </div>`
+                }
+
+                function renderPrice(prices) {
+                    // Render the price component from the supplied prices
+                    return `<span class="card-text text-muted">(${prices.retailPrice ? `<del><span class="font-italic">${formatLocalizedPrice(prices.price)}</span></del>` : ''} ${formatLocalizedPrice(prices.price)})</span>`
+                }
+
+                function renderPagination(pageInfo) {
+                    if(pageInfo.hasNextPage) {
+                        params.navigationString = `after:"${pageInfo.endCursor}", first:50`;
+                        document.getElementById('pagination_button').textContent = 'Next';
+                    }
+
+                    if(pageInfo.hasPreviousPage) {
+                        params.navigationString = `before:"${pageInfo.startCursor}", last:50`;
+                        document.getElementById('pagination_button').textContent = 'Previous';
+                    }
+                }
+
+                function toggleProduct(e) {
+                    const buttonElem = e.target;
+                    buttonElem.classList.add('d-none');
+                    if(buttonElem.previousElementSibling != null) {
+                        buttonElem.previousElementSibling.classList.remove('d-none');
+                        e.path[2].classList.remove('glow-positive');
+                        if(productsObj.selected_products.indexOf(e.path[2].getAttribute('data-product-id')) != -1) {
+                            productsObj.selected_products.splice(productsObj.selected_products.indexOf(e.path[2].getAttribute('data-product-id')), 1);
+                        }
+                    }
+                    if(buttonElem.nextElementSibling != null) {
+                        buttonElem.nextElementSibling.classList.remove('d-none');
+                        e.path[2].classList.add('glow-positive');
+                        productsObj.selected_products.push(e.path[2].getAttribute('data-product-id'));
+                    }
+                    extension.field.setValue(productsObj);
+                }
+
+                /*
+                    API fetching
+                */
+                function getProductAndSiteInfo(params) {
+                    const storeUrl = new URL(params.store_url);
+
+                    // Use the store's canonical URL which should always resolve
+                    const graphQLUrl = `${storeUrl.origin}/graphql`;
+
+                    // Set up GraphQL query
+                    // If specific product IDs were supplied, fetch them, else just get the first few products
+                    let graphQLQuery = `
+                        query Products {
+                          site {
+                            products(${params.product_ids != null ? 'entityIds: [' + params.product_ids.toString() + ']' : params.navigationString}) {
+                              pageInfo{
+                                hasNextPage
+                                hasPreviousPage
+                                startCursor
+                                endCursor
+                              }
+                              edges {
+                                product: node {
+                                  ...ProductFields
+                                }
+                              }
+                            }
+                          }
+                        }
+
+                        fragment ProductFields on Product {
+                          id
+                          entityId
+                          name
+                          sku
+                          path
+                          defaultImage {
+                            img320px: url(width: 320)
+                            img640px: url(width: 640)
+                            img960px: url(width: 960)
+                            img1280px: url(width: 1280)
+                            altText
+                          }
+                          prices {
+                            price {
+                              value
+                              currencyCode
+                            }
+                            retailPrice {
+                              value
+                              currencyCode
+                            }
+                          }
+                        }`
+
+                    return new Promise(function(resolve, reject) {
+                        const xhttp = new XMLHttpRequest();
+                        xhttp.onreadystatechange = function() {
+                            if (this.readyState == 4 && this.status == 200) {
+                                resolve(JSON.parse(JSON.parse(this.responseText)).data);
+                            }
+                            if (this.readyState == 4 && this.status >= 400) {
+                                reject('GraphQLError');
+                            }
+                        };
+                        xhttp.open("GET", encodeURI(`${params.proxy_url}?action=gqlRequest&store_url=${graphQLUrl}&token=${params.token}&query=${JSON.stringify({query: graphQLQuery})}`), true);
+                        xhttp.send();
+                    }).then(data => {
+                        // With our data loaded, render the product listing
+                        renderPage(data);
+                    }).catch(e => {
+                        // Some error was encountered
+                        const errorMessageElement = document.getElementById('error_message');
+                        document.getElementById('error_message').textContent = `Error returned from API: - check that your store url and API token are valid, and that your token's CORS origin is correctly configured. Check the browser console for more details of this error.`;
+                        errorMessageElement.classList.replace('d-none', 'd-flex');
+                        throw(e);
+                    });
+                }
+
+                // Set up default params
+                let params = {
+                    store_url: extension.parameters.instance.apiEndpoint,
+                  	proxy_url: extension.parameters.instance.proxyEndpoint,
+                    product_ids: null,
+                    token: extension.parameters.instance.apiToken,
+                    pageInfo: null,
+                    navigationString: 'after:"", first:50'
+                };
+
+                // Check for required parameters, throw an error if they're not found
+                if (typeof fieldValue != 'undefined' && fieldValue.selected_products.length > 0) {
+                    // Render selected items
+                    productsObj = fieldValue;
+                    params.product_ids = productsObj.selected_products;
+                    getProductAndSiteInfo(params);
+                } else {
+                    // Try to load the product data from the Storefront GraphQL API
+                    getProductAndSiteInfo(params);
+                }
+
+                document.getElementById('pagination_button').addEventListener('click', function(){ getProductAndSiteInfo(params); });
+            });
+        </script>
+    </body>
+</html>
