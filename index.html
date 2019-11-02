@@ -163,7 +163,7 @@
 
                 <!-- Pagination -->
                 <div id="pagination" class="text-center">
-                    <button id="pagination_button" type="button" class="f36-button color-default"></button>
+                    <button id="pagination_button" type="button" class="f36-button color-default d-none"></button>
                 </div>
         </div>
         <script>
@@ -174,6 +174,9 @@
                 // Set initial value
                 const fieldValue = extension.field.getValue();
                 let productsObj = {selected_products: []};
+                let firstCursor = null;
+                let lastCursor = null;
+                let hasProducts = false;
 
                 /*
                     Utility functions for rendering
@@ -237,11 +240,31 @@
                     if(pageInfo.hasNextPage) {
                         params.navigationString = `after:"${pageInfo.endCursor}", first:50`;
                         document.getElementById('pagination_button').textContent = 'Next';
+
+                        if(firstCursor == null) {
+                            firstCursor = pageInfo.startCursor;
+                        }
                     }
 
                     if(pageInfo.hasPreviousPage) {
                         params.navigationString = `before:"${pageInfo.startCursor}", last:50`;
                         document.getElementById('pagination_button').textContent = 'Previous';
+                    }
+
+                    if(!pageInfo.hasNextPage && !pageInfo.hasPreviousPage) {
+                        if(lastCursor == null) {
+                            lastCursor = pageInfo.endCursor;
+                        }
+
+                        if(pageInfo.startCursor == firstCursor) {
+                            params.navigationString = `after:"${pageInfo.endCursor}", first:50`;
+                            document.getElementById('pagination_button').textContent = 'Next';
+                        }
+
+                        if(pageInfo.endCursor == lastCursor){
+                            params.navigationString = `before:"${pageInfo.startCursor}", last:50`;
+                            document.getElementById('pagination_button').textContent = 'Previous';
+                        }
                     }
                 }
 
@@ -258,9 +281,21 @@
                     if(buttonElem.nextElementSibling != null) {
                         buttonElem.nextElementSibling.classList.remove('d-none');
                         e.path[2].classList.add('glow-positive');
-                        productsObj.selected_products.push(e.path[2].getAttribute('data-product-id'));
+
+                        if(productsObj.selected_products.length <= 50) {
+                            productsObj.selected_products.push(e.path[2].getAttribute('data-product-id'));
+                        }
                     }
                     extension.field.setValue(productsObj);
+
+                    if(hasProducts && productsObj.selected_products.length == 0){
+                        params.product_ids = null;
+                        params.pageInfo = null,
+                        params.navigationString = 'after:"", first:50';
+
+                        getProductAndSiteInfo(params);
+                        document.getElementById('pagination_button').classList.remove('d-none');
+                    }
                 }
 
                 /*
@@ -355,12 +390,14 @@
                 // Check for required parameters, throw an error if they're not found
                 if (typeof fieldValue != 'undefined' && fieldValue.selected_products.length > 0) {
                     // Render selected items
+                    hasProducts = true;
                     productsObj = fieldValue;
                     params.product_ids = productsObj.selected_products;
                     getProductAndSiteInfo(params);
                 } else {
                     // Try to load the product data from the Storefront GraphQL API
                     getProductAndSiteInfo(params);
+                    document.getElementById('pagination_button').classList.remove('d-none');
                 }
 
                 document.getElementById('pagination_button').addEventListener('click', function(){ getProductAndSiteInfo(params); });
