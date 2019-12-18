@@ -358,7 +358,7 @@
                         const xhttp = new XMLHttpRequest();
                         xhttp.onreadystatechange = function() {
                             if (this.readyState == 4 && this.status == 200) {
-                                resolve(JSON.parse(JSON.parse(this.responseText)).data);
+                                resolve(JSON.parse(this.responseText).data);
                             }
                             if (this.readyState == 4 && this.status >= 400) {
                                 reject('GraphQLError');
