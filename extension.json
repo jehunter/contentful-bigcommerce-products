@@ -6,10 +6,16 @@
     "parameters": {
         "instance": [
             {
-                "id": "apiToken",
-                "name": "BigCommerce Storefront API Token",
+                "id": "apiToken1",
+                "name": "BigCommerce Storefront API Token 1",
                 "type": "Symbol",
-                "default": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJlYXQiOjIxNDU5MTY4MDAsInN1Yl90eXBlIjoyLCJ0b2tlbl90eXBlIjoxLCJjb3JzIjpbImh0dHBzOi8vdWlleHRlbnNpb24uc29na25pdmVzLmNvbSJdLCJjaWQiOjEsImlhdCI6MTU3MjQ2MzA0MSwic3ViIjoicXJ3cTkyczc5ejl1eGlvMGVmOWV6cncwYnY4cHlhaiIsInNpZCI6MTAwMDU4NzY1NywiaXNzIjoiQkMifQ.5nE4xc66yCDrn0da_WQxH8_hnnZbgChZ_Duyv5mf7Oq3l03oTYvWXZnWb-mPUXxoQ576Pypn8k7Qe3EUXCjBpA"
+                "default": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJlYXQiOjIxNDU5MTY4MDAsInN1Yl90eXBlIjoyLCJ0b2tlbl90eXBlIjoxLCJjb3JzIjpbImh0dHBzOi8vdWlleHRlbnNpb24uc29na25pdmVzLmNvbSJdLCJjaWQiOjEsImlhdCI6MTU3MjQ2"
+            },
+            {
+                "id": "apiToken2",
+                "name": "BigCommerce Storefront API Token 2",
+                "type": "Symbol",
+                "default": "MzA0MSwic3ViIjoicXJ3cTkyczc5ejl1eGlvMGVmOWV6cncwYnY4cHlhaiIsInNpZCI6MTAwMDU4NzY1NywiaXNzIjoiQkMifQ.5nE4xc66yCDrn0da_WQxH8_hnnZbgChZ_Duyv5mf7Oq3l03oTYvWXZnWb-mPUXxoQ576Pypn8k7Qe3EUXCjBpA"
             },
             {
                 "id": "apiEndpoint",
